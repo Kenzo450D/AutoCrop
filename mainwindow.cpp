@@ -1,12 +1,19 @@
+//local includes
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "AutoCrop.h"
 
+//OpenCV includes
 #include <highgui.h>
+#include <cvaux.h>
+#include <opencv/cv.h>
 
+//Qt includes
 #include <QLabel>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QDebug>
+#include <QRect>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -61,6 +68,37 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_2_clicked()
 {
+    AutoCrop act(this);
+    connect(&act, SIGNAL(signalProgress(int)),
+                this, SLOT(slotProgress(int)));
+    act.setImagePath(ui->lineEdit->text());
+    QRect crop = act.autoOuterCrop();
+    ui->textEdit->setText(act.output());
+    qDebug() << "\nTopLeft : ("<<crop.left()<<","<<crop.top()<<")";
+    qDebug() << "\nBottomRight : ("<<crop.right()<<","<<crop.bottom()<<")";
+    act.ShowOutput(crop);
+    /*
+    int height=crop.height();
+    int width=crop.width();
+    IplImage* img=cvLoadImage(ui->lineEdit->text().toStdString().c_str());
+    IplImage* result = cvCreateImage(cvSize(width,height),img->depth,img->nChannels);
+    int ni,nj,i,j,topY,bottomY,leftX,rightX;
+    topY=crop.top();
+    bottomY=crop.bottom();
+    leftX=crop.left();
+    rightX=crop.right();
+    for(i=topY,ni=0;i<=bottomY;i++,ni++)
+    {
+        for (j=leftX,nj=0;j<=rightX;j++,nj++)
+        {
+            cvSet2D(result,ni,nj,cvGet2D(img,i,j));
+        }
+    }
+    cvShowImage("Result", result);
+    cvReleaseImage(&img);
+    cvReleaseImage(&result);
+    */
+    /**
     IplImage* img=cvLoadImage(ui->lineEdit->text().toStdString().c_str());
     //this is to store the binary image (only for inner crop)
 //    CvMat* binaryImg = cvCreateMat(img->height,img->width,CV_8UC1);
@@ -73,15 +111,15 @@ void MainWindow::on_pushButton_2_clicked()
     int righti=-1,rightj=-1;
 //    float* binaryImgPtr = (float*)binaryImg->data.ptr;
     //----------------------Finding the outer boundaries of the image (i.e. with black portions)
-    /*
-      This would be done in 4 steps
-      1. Search column wise:
-      (a) From the left to the right, this is to get the left boundary
-      (b) From the right to the left, this is to get the right boundary
-      2. Search row wise :
-      (a) From the top to the bottom, this is to get the top boundary
-      (b) From the bottom to the top, this is to get the bottom boundary
-      */
+
+//      This would be done in 4 steps
+//      1. Search column wise:
+//      (a) From the left to the right, this is to get the left boundary
+//      (b) From the right to the left, this is to get the right boundary
+//      2. Search row wise :
+//      (a) From the top to the bottom, this is to get the top boundary
+//      (b) From the bottom to the top, this is to get the bottom boundary
+
 
 
 
@@ -217,4 +255,10 @@ void MainWindow::on_pushButton_2_clicked()
     cvReleaseImage(&result);
     cvSaveImage("AutoCropResult.jpg",result);
     //    cvReleaseMat(&BinaryImage);
+    */
+}
+
+void MainWindow::slotProgress(int value)
+{
+    ui->progressBar->setValue(value);
 }
