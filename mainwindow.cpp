@@ -262,3 +262,18 @@ void MainWindow::slotProgress(int value)
 {
     ui->progressBar->setValue(value);
 }
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    AutoCrop act(this);
+    connect(&act, SIGNAL(signalProgress(int)),
+                this, SLOT(slotProgress(int)));
+    act.setImagePath(ui->lineEdit->text());
+    //QRect crop = act.autoOuterCrop();
+    QRect innercrop=act.autoInnerCrop();
+    ui->textEdit->setText(act.output());
+    qDebug() << "\nTopLeft : ("<<innercrop.left()<<","<<innercrop.top()<<")";
+    qDebug() << "\nBottomRight : ("<<innercrop.right()<<","<<innercrop.bottom()<<")";
+    act.ShowOutput(innercrop);
+
+}

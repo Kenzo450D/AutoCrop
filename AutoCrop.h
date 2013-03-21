@@ -19,6 +19,8 @@ public:
 
     QRect autoOuterCrop();
 
+    QRect autoInnerCrop();
+
     QString output() const;
 
     void ShowOutput(QRect);
