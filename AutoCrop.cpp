@@ -377,21 +377,107 @@ QRect AutoCrop::autoInnerCrop()
 
 
     //---------------------threshold the image
+
     IplImage* threshold = cvCreateImage(cvSize(crop.width(),crop.height()),IPL_DEPTH_8U,1);
     float sum=0.0;
+//    for(i=0;i<result->height;i++)
+//    {
+//        for(j=0;j<result->width;j++)
+//        {
+//            sum=cvGet2D(result,i,j).val[0] + cvGet2D(result,i,j).val[1] + cvGet2D(result,i,j).val[2];
+//            if(sum==0)
+//                cvSet2D(threshold,i,j,cvScalar(0));
+//            else
+//                cvSet2D(threshold,i,j,cvScalar(255));
+//        }
+//    }
+
+
+    //----------------------new threshold image option
+
+    int toggleflag1=0,toggleflag2=0;
+
+    //-----initialize
+
+    for(i=0;i<result->height;i++)
+        for(j=0;j<result->width;j++)
+            cvSet2D(threshold,i,j,cvScalar(0));
+
+    //----------fill white points on horizontal scan
     for(i=0;i<result->height;i++)
     {
+        toggleflag1=-1;
+        toggleflag2=-1;
         for(j=0;j<result->width;j++)
         {
             sum=cvGet2D(result,i,j).val[0] + cvGet2D(result,i,j).val[1] + cvGet2D(result,i,j).val[2];
-            if(sum==0)
-                cvSet2D(threshold,i,j,cvScalar(0));
-            else
-                cvSet2D(threshold,i,j,cvScalar(255));
+            if(sum>0)
+            {
+                toggleflag1=j;
+                break;
+            }
         }
+        for(j=(result->width-1);j>=0;j--)
+        {
+            sum=cvGet2D(result,i,j).val[0] + cvGet2D(result,i,j).val[1] + cvGet2D(result,i,j).val[2];
+            if(sum>0)
+            {
+                toggleflag2=j;
+                break;
+            }
+        }
+        if(toggleflag1>=0)
+            for(j=toggleflag1;j<=toggleflag2;j++)
+                cvSet2D(threshold,i,j,cvScalar(255));
     }
 
+    //----------fill black points on vertical scan
+    for(j=0;j<result->width;j++)
+    {
+        toggleflag1=-1;
+        toggleflag2=-2;
+        for(i=0;i<result->height;i++)
+        {
+            sum=cvGet2D(result,i,j).val[0] + cvGet2D(result,i,j).val[1] + cvGet2D(result,i,j).val[2];
+            if(sum>0)
+            {
+                toggleflag1=i;
+                break;
+            }
+        }
+        for(i=(result->height-1);i>=0;i--)
+        {
+            sum=cvGet2D(result,i,j).val[0] + cvGet2D(result,i,j).val[1] + cvGet2D(result,i,j).val[2];
+            if(sum>0)
+            {
+                toggleflag2=i;
+                break;
+            }
+        }
+        if(toggleflag1>=0)
+            for(i=0;i<toggleflag1;i++)
+                cvSet2D(threshold,i,j,cvScalar(0));
 
+        if(toggleflag2>=0)
+            for(i=(toggleflag2+1);i<(result->height);i++)
+                cvSet2D(threshold,i,j,cvScalar(0));
+    }
+    qDebug() << "Thresholding Complete\n";
+
+
+    //---------work on the whitespace
+
+    cvShowImage("Thresholded Image",threshold);
+
+    qDebug() << "Image showed successfully";
+    int p[3];
+    p[0] = CV_IMWRITE_JPEG_QUALITY;
+    p[1] = 100;
+    p[2] = 0;
+    cvSaveImage("thesholdedfile.jpg", threshold,p);
+
+//    return (crop);
+    //---------------------inner crop
     int limitcolumn = threshold->width;
     int limitrow    = threshold->height;
     int centeri=((limitrow/2)-1);
@@ -633,6 +719,11 @@ void AutoCrop::ShowOutput(QRect crop)
         }
     }
     cvShowImage("Result", result);
+    int p[3];
+    p[0] = CV_IMWRITE_JPEG_QUALITY;
+    p[1] = 100;
+    p[2] = 0;
+    cvSaveImage("croppedfile.jpg", result,p);
     cvReleaseImage(&img);
     cvReleaseImage(&result);
 }
